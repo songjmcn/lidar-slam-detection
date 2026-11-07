@@ -27,7 +27,7 @@
 
 #include "DBoW2/DBoW2/FeatureVector.h"
 
-#include<stdint-gcc.h>
+#include <cstdint>  // was <stdint-gcc.h> (GCC-only header); portable on macOS/clang
 
 using namespace std;
 

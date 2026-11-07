@@ -2,6 +2,8 @@
 
 #include <sys/prctl.h>
 
+#include <boost/algorithm/string/replace.hpp>  // boost::replace_all_copy; was a transitive include before
+
 #include "rtkm.h"
 #include "fastlio.h"
 #include "localization.h"

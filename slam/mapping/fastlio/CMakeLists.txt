@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 project(fast_lio)
 
 set(CMAKE_C_FLAGS "-Wall -fexceptions")
@@ -56,4 +56,8 @@ target_link_libraries(fast_lio
     ${Boost_LIBRARIES}
     ${PCL_LIBRARIES}
     map_common
+    # Same reason as rtkm: the graph backend entry points (init_*_node,
+    # enqueue_graph_gps, get_odom2map, ...) are defined in g2o_backend and used
+    # to stay unresolved in the .so on Linux. macOS demands they be linked.
+    g2o_backend
 )

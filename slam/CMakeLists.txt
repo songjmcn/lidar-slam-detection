@@ -61,7 +61,19 @@ pybind11_add_module(slam_wrapper
 set_target_properties(slam_wrapper PROPERTIES PREFIX "")
 set_target_properties(slam_wrapper PROPERTIES SUFFIX ".so")
 
-target_link_libraries(slam_wrapper
-  PRIVATE ${PYTHON_LIBRARIES}
-  slam
-)
+if(APPLE)
+  # Do NOT link ${PYTHON_LIBRARIES} here. The interpreter binary already exports the
+  # CPython API (conda's python3 statically embeds CPython and exports ~1100 _Py*
+  # symbols), and pybind11 passes -undefined dynamic_lookup on macOS. Linking
+  # libpython3.9.dylib into the bundle loads a SECOND CPython runtime with its own
+  # _PyRuntime, so the module's PyGILState_*/PyEval_* calls hit a NULL thread state
+  # and the import dies with a segfault inside take_gil.
+  target_link_libraries(slam_wrapper
+    PRIVATE slam
+  )
+else()
+  target_link_libraries(slam_wrapper
+    PRIVATE ${PYTHON_LIBRARIES}
+    slam
+  )
+endif()

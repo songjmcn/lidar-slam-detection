@@ -13,7 +13,13 @@
 #include <sysexits.h>
 #include <termios.h>
 #include <sys/param.h>
+#if defined(__linux__)
 # include <linux/serial.h>
+#elif defined(__APPLE__)
+# include <IOKit/serial/ioss.h>   // IOSSIOSPEED: non-standard baud rates on macOS
+# include <mach/mach.h>
+# include <mach/clock.h>          // host_get_clock_service / clock_get_time
+#endif
 
 #include <sys/select.h>
 #include <sys/time.h>
@@ -748,6 +754,7 @@ Serial::SerialImpl::reconfigurePort ()
 
   // apply custom baud rate, if any
   if (custom_baud == true) {
+#if defined(__linux__)
     // Linux Support
     struct serial_struct ser;
 
@@ -766,6 +773,17 @@ Serial::SerialImpl::reconfigurePort ()
       LOG_DEBUG("reconfigure serial port iotcl failed");
       return false;
     }
+#elif defined(__APPLE__)
+    // macOS has no serial_struct; non-standard rates go through IOSSIOSPEED.
+    speed_t speed = static_cast<speed_t> (baudrate_);
+    if (-1 == ioctl (fd_, IOSSIOSPEED, &speed)) {
+      LOG_DEBUG("reconfigure serial port IOSSIOSPEED failed");
+      return false;
+    }
+#else
+    LOG_DEBUG("custom baud rate is not supported on this platform");
+    return false;
+#endif
   }
 
   // Update byte_time_ based on the new settings.

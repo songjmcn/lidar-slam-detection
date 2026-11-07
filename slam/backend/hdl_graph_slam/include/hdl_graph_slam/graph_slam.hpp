@@ -5,6 +5,7 @@
 
 #include <memory>
 
+#include <Eigen/Geometry>  // Isometry3d/Quaterniond used below; was a transitive include before
 #include <g2o/core/hyper_graph.h>
 
 namespace g2o {

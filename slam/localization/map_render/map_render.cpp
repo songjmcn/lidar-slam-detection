@@ -9,6 +9,7 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/sample_consensus/ransac.h>
 #include <pcl/sample_consensus/sac_model_plane.h>
+#include <boost/optional.hpp>  // was pulled in transitively via PCL 1.9; not with PCL 1.15
 
 #include "Utils.h"
 #include "InterProcess.h"

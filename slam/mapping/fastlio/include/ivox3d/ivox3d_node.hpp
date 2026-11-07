@@ -79,14 +79,15 @@ struct IVoxNode<PointT, dim>::DistPoint {
 
     PointT Get() { return node->GetPoint(idx); }
 
-    inline bool operator()(const DistPoint& p1, const DistPoint& p2) { return p1.dist < p2.dist; }
+    inline bool operator()(const DistPoint& p1, const DistPoint& p2) const { return p1.dist < p2.dist; }
 
-    inline bool operator<(const DistPoint& rhs) { return dist < rhs.dist; }
+    // const-qualified: std::nth_element/std::sort take const references
+    inline bool operator<(const DistPoint& rhs) const { return dist < rhs.dist; }
 };
 
 template <typename PointT, int dim>
 void IVoxNode<PointT, dim>::InsertPoint(const PointT& pt) {
-    points_.template emplace_back(pt);
+    points_.emplace_back(pt);  // stray `template` keyword: rejected by clang
 }
 
 template <typename PointT, int dim>
@@ -112,7 +113,7 @@ int IVoxNode<PointT, dim>::KNNPointByCondition(std::vector<DistPoint>& dis_point
     for (const auto& pt : points_) {
         double d = distance2(pt, point);
         if (d < max_square_range) {
-            dis_points.template emplace_back(DistPoint(d, this, &pt - points_.data()));
+            dis_points.emplace_back(DistPoint(d, this, &pt - points_.data()));  // stray `template` keyword
         }
     }
 

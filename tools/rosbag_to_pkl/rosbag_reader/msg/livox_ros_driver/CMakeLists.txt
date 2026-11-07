@@ -1,5 +1,5 @@
 # Copyright(c) 2019 livoxtech limited.
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 # we only need livox message definition here
 project(livox_ros_driver)

@@ -1,8 +1,22 @@
 #include "SystemUtils.h"
 
+#if defined(__linux__)
 #define BOOST_STACKTRACE_USE_ADDR2LINE
+#else
+// macOS/libc++: _Unwind_Backtrace is available without defining _GNU_SOURCE.
+#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+#endif
 #include <sys/time.h>
 #include <sched.h>
+
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#include <mach/thread_act.h>
+#include <mach/thread_policy.h>
+#ifndef CLOCK_MONOTONIC_RAW
+#define CLOCK_MONOTONIC_RAW CLOCK_MONOTONIC
+#endif
+#endif
 
 #include <boost/stacktrace.hpp>
 #include <iostream>
@@ -11,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <csignal>   // signal()/raise()/SIGSEGV — no longer pulled in transitively on macOS
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -40,6 +55,7 @@ void setSelfThreadAffinity(int core_id) {
   if (core_id < 0 || core_id >= num_cores)
     return;
 
+#if defined(__linux__)
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   CPU_SET(core_id, &cpuset);
@@ -48,6 +64,20 @@ void setSelfThreadAffinity(int core_id) {
   if (pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset)) {
     LOG_WARN("Failed to pthread_setaffinity_np: {}", std::strerror(errno));
   }
+#elif defined(__APPLE__)
+  // macOS has no strict CPU pinning. THREAD_AFFINITY_POLICY only expresses a
+  // "these threads should run together" hint, so tag = core_id + 1.
+  thread_affinity_policy_data_t policy;
+  policy.affinity_tag = core_id + 1;
+  thread_port_t thread = pthread_mach_thread_np(pthread_self());
+  if (thread_policy_set(thread, THREAD_AFFINITY_POLICY,
+                        reinterpret_cast<thread_policy_t>(&policy),
+                        THREAD_AFFINITY_POLICY_COUNT)) {
+    LOG_WARN("Failed to thread_policy_set(THREAD_AFFINITY_POLICY)");
+  }
+#else
+  (void)core_id;
+#endif
 }
 
 uint64_t getCurrentTime() {

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 project(rtkm)
 
 set(CMAKE_C_FLAGS "-Wall")
@@ -27,4 +27,8 @@ target_include_directories(rtkm
 
 target_link_libraries(rtkm
     map_common
+    # rtkm orchestrates the graph backend (init_/deinit_*_node, graph_optimization).
+    # On Linux those symbols were left undefined in the .so and resolved when the
+    # main executable linked everything; macOS's ld refuses that for dylibs.
+    g2o_backend
 )
